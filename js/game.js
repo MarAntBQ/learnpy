@@ -1075,7 +1075,7 @@
     doc.text(T('cert.pdf.date', { date: dateStr }), 28, 190);
     doc.text('davidcanarnt.github.io/learnpy', W - 28, 190, { align: 'right' });
 
-    const safe = name.replace(/[^\w.\-]+/g, '_').replace(/^_+|_+$/g, '') || 'player';
+    const safe = name.replace(/[^\p{L}\p{N}.\-]+/gu, '_').replace(/^_+|_+$/g, '') || 'player';
     doc.save('LearnPy-Certificate-' + safe + '.pdf');
     try { Sfx.star && Sfx.star(); } catch (e) {}
   }
