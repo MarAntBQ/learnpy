@@ -24,6 +24,7 @@
     return {
       v: 1, xp: 0, combo: 0, bestCombo: 0,
       levels: {}, ach: [],
+      name: '',
       sound: true, anim: true,
       daily: { date: '', done: false },
       sandboxRuns: 0, noHintCount: 0, quizFirstTry: 0,
@@ -996,6 +997,8 @@
       });
     } else cert.style.display = 'none';
 
+    $('#btn-cert-pdf').style.display = isLast ? '' : 'none';
+
     $('#btn-next').textContent = hasNext ? T('success.next') : T('success.backToMap');
     modal.classList.add('show');
   }
@@ -1012,6 +1015,69 @@
     Sfx.click();
     openLevel(cur.wi, cur.li);
   });
+  $('#btn-cert-pdf').addEventListener('click', () => { Sfx.click(); downloadCertificate(); });
+
+  /* ======================= completion certificate (PDF) ================= */
+  function downloadCertificate() {
+    const JsPDF = window.jspdf && window.jspdf.jsPDF;
+    if (!JsPDF) { alert(T('cert.noLib')); return; }
+    let name = String(save.name || '').trim();
+    if (!name) {
+      name = String(prompt(T('cert.askName')) || '').trim();
+      if (!name) return;                               // cancelado o vacío
+      save.name = name.slice(0, 60); persist();
+      const ni = $('#player-name'); if (ni) ni.value = save.name;
+    }
+    const r = rankFor(save.xp);
+    const lang = I18N.getLang();
+    const dateStr = new Date().toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-US',
+      { year: 'numeric', month: 'long', day: 'numeric' });
+
+    const doc = new JsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const W = 297, H = 210, cx = W / 2;
+    const CYAN = [34, 211, 238], PURPLE = [167, 139, 250], NAVY = [30, 41, 59], SLATE = [100, 116, 139];
+    const draw = c => doc.setDrawColor(c[0], c[1], c[2]);
+    const fill = c => doc.setFillColor(c[0], c[1], c[2]);
+    const ink = c => doc.setTextColor(c[0], c[1], c[2]);
+
+    fill([253, 252, 248]); doc.rect(0, 0, W, H, 'F');
+    draw(CYAN); doc.setLineWidth(3); doc.roundedRect(10, 10, W - 20, H - 20, 6, 6);
+    draw(PURPLE); doc.setLineWidth(0.8); doc.roundedRect(15, 15, W - 30, H - 30, 4, 4);
+
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(40); ink(CYAN);
+    doc.text('LearnPy', cx, 46, { align: 'center' });
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(16); ink(SLATE);
+    doc.text(T('cert.pdf.subtitle'), cx, 58, { align: 'center' });
+
+    doc.setFontSize(13); ink(NAVY);
+    doc.text(T('cert.pdf.awarded'), cx, 82, { align: 'center' });
+
+    // nombre, achicando la fuente si no entra
+    let nameSize = 40; const maxNameW = 235;
+    doc.setFont('times', 'bolditalic'); doc.setFontSize(nameSize);
+    let tw = doc.getTextWidth(name);
+    if (tw > maxNameW) { nameSize = Math.max(16, Math.floor(nameSize * maxNameW / tw)); doc.setFontSize(nameSize); tw = doc.getTextWidth(name); }
+    ink(PURPLE); doc.text(name, cx, 104, { align: 'center' });
+    const uW = Math.min(maxNameW, tw + 20);
+    draw(CYAN); doc.setLineWidth(0.6); doc.line(cx - uW / 2, 110, cx + uW / 2, 110);
+
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(14); ink(NAVY);
+    doc.text(T('cert.pdf.completed'), cx, 128, { align: 'center' });
+
+    doc.setFontSize(12); ink(SLATE);
+    doc.text(T('cert.pdf.stats', { rank: r.name, xp: save.xp, ach: save.ach.length, achTotal: D.ACHIEVEMENTS.length }), cx, 144, { align: 'center' });
+
+    doc.setFont('helvetica', 'italic'); doc.setFontSize(12); ink(PURPLE);
+    doc.text(T('cert.pdf.defeated'), cx, 162, { align: 'center' });
+
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(10); ink(SLATE);
+    doc.text(T('cert.pdf.date', { date: dateStr }), 28, 190);
+    doc.text('davidcanarnt.github.io/learnpy', W - 28, 190, { align: 'right' });
+
+    const safe = name.replace(/[^\w.\-]+/g, '_').replace(/^_+|_+$/g, '') || 'player';
+    doc.save('LearnPy-Certificate-' + safe + '.pdf');
+    try { Sfx.star && Sfx.star(); } catch (e) {}
+  }
 
   $('#btn-run').addEventListener('click', runLevel);
   $('#btn-hint').addEventListener('click', showHint);
@@ -1140,6 +1206,8 @@
     $('#btn-anim-toggle').textContent = save.anim ? T('common.on') : T('common.off');
     const sel = $('#lang-select');
     if (sel) sel.value = I18N.getLang();
+    const nameInput = $('#player-name');
+    if (nameInput) { nameInput.value = save.name || ''; nameInput.placeholder = T('settings.namePlaceholder'); }
   }
   function openSettings() {
     refreshSettingsUi();
@@ -1154,6 +1222,10 @@
   $('#btn-anim-toggle').addEventListener('click', () => {
     save.anim = !save.anim; persist();
     $('#btn-anim-toggle').textContent = save.anim ? T('common.on') : T('common.off');
+  });
+  $('#player-name').addEventListener('input', e => {
+    save.name = String(e.target.value).slice(0, 60);
+    persist();
   });
   $('#lang-select').addEventListener('change', e => {
     I18N.setLang(e.target.value);
