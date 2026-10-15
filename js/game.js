@@ -1035,21 +1035,22 @@
 
     const doc = new JsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
     const W = 297, H = 210, cx = W / 2;
-    const CYAN = [34, 211, 238], PURPLE = [167, 139, 250], NAVY = [30, 41, 59], SLATE = [100, 116, 139];
+    const CYAN = [34, 211, 238], PURPLE = [167, 139, 250], BG = [11, 18, 38], PANEL = [15, 23, 48], TEXT = [230, 236, 255], DIM = [139, 150, 184];
     const draw = c => doc.setDrawColor(c[0], c[1], c[2]);
     const fill = c => doc.setFillColor(c[0], c[1], c[2]);
     const ink = c => doc.setTextColor(c[0], c[1], c[2]);
 
-    fill([253, 252, 248]); doc.rect(0, 0, W, H, 'F');
-    draw(CYAN); doc.setLineWidth(3); doc.roundedRect(10, 10, W - 20, H - 20, 6, 6);
-    draw(PURPLE); doc.setLineWidth(0.8); doc.roundedRect(15, 15, W - 30, H - 30, 4, 4);
+    fill(BG); doc.rect(0, 0, W, H, 'F');
+    fill(PANEL); doc.roundedRect(12, 12, W - 24, H - 24, 6, 6, 'F');
+    draw(CYAN); doc.setLineWidth(2.4); doc.roundedRect(12, 12, W - 24, H - 24, 6, 6);
+    draw(PURPLE); doc.setLineWidth(0.8); doc.roundedRect(17, 17, W - 34, H - 34, 4, 4);
 
     doc.setFont('helvetica', 'bold'); doc.setFontSize(40); ink(CYAN);
     doc.text('LearnPy', cx, 46, { align: 'center' });
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(16); ink(SLATE);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(16); ink(DIM);
     doc.text(T('cert.pdf.subtitle'), cx, 58, { align: 'center' });
 
-    doc.setFontSize(13); ink(NAVY);
+    doc.setFontSize(13); ink(TEXT);
     doc.text(T('cert.pdf.awarded'), cx, 82, { align: 'center' });
 
     // nombre, achicando la fuente si no entra
@@ -1061,16 +1062,16 @@
     const uW = Math.min(maxNameW, tw + 20);
     draw(CYAN); doc.setLineWidth(0.6); doc.line(cx - uW / 2, 110, cx + uW / 2, 110);
 
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(14); ink(NAVY);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(14); ink(TEXT);
     doc.text(T('cert.pdf.completed'), cx, 128, { align: 'center' });
 
-    doc.setFontSize(12); ink(SLATE);
+    doc.setFontSize(12); ink(DIM);
     doc.text(T('cert.pdf.stats', { rank: r.name, xp: save.xp, ach: save.ach.length, achTotal: D.ACHIEVEMENTS.length }), cx, 144, { align: 'center' });
 
     doc.setFont('helvetica', 'italic'); doc.setFontSize(12); ink(PURPLE);
     doc.text(T('cert.pdf.defeated'), cx, 162, { align: 'center' });
 
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(10); ink(SLATE);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(10); ink(DIM);
     doc.text(T('cert.pdf.date', { date: dateStr }), 28, 190);
     doc.text('davidcanarnt.github.io/learnpy', W - 28, 190, { align: 'right' });
 
