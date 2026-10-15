@@ -469,6 +469,7 @@
     $('#level-bubble').innerHTML = pickBubble(level);
     setMood('happy');
     resetHintUi();
+    $('#btn-video').onclick = () => openLessonVideo(level);
 
     // expected output box
     const showExp = level.expectedShow !== false && level.expected;
@@ -1170,6 +1171,22 @@
     });
   });
 
+  function openLessonVideo(level) {
+    const lang = I18N.getLang();
+    const src = `videos/${level.id}.${lang === 'es' ? 'es' : 'en'}.webm`;
+    showInfoModal({
+      title: `🎬 ${level.title}`,
+      html: `<video class="lesson-video" controls autoplay src="${src}"></video>`,
+      buttons: [{ label: T('common.ok'), primary: true }]
+    });
+    const v = document.querySelector('#modal-info .lesson-video');
+    document.querySelector('#modal-info-inner').style.maxWidth = '720px';
+    if (v) v.addEventListener('error', () => {
+      document.querySelector('#modal-info').classList.remove('show');
+      say(T('level.videoMissing'));
+    });
+  }
+
   function showInfoModal({ title, html, buttons }) {
     // lightweight dynamic modal
     let host = $('#modal-info');
@@ -1179,9 +1196,18 @@
       host.id = 'modal-info';
       host.innerHTML = '<div class="modal" id="modal-info-inner"></div>';
       document.body.appendChild(host);
-      host.addEventListener('click', e => { if (e.target === host) host.classList.remove('show'); });
+      host.addEventListener('click', e => {
+        if (e.target === host) {
+          host.classList.remove('show');
+          host.querySelectorAll('video').forEach(v => v.pause());
+        }
+      });
     }
     const inner = host.querySelector('#modal-info-inner');
+    const hide = () => {
+      host.classList.remove('show');
+      host.querySelectorAll('video').forEach(v => v.pause());
+    };
     inner.innerHTML = `<h2>${esc(title)}</h2>${html}<div class="modal-btns"></div>`;
     const btnRow = inner.querySelector('.modal-btns');
     for (const b of buttons || [{ label: T('common.ok'), primary: true }]) {
@@ -1189,7 +1215,7 @@
       el.className = 'btn' + (b.primary ? ' primary' : '') + (b.danger ? '' : '');
       el.style.cssText = b.danger ? 'color:var(--bad);border-color:rgba(251,113,133,.4)' : '';
       el.textContent = b.label;
-      el.addEventListener('click', () => { host.classList.remove('show'); b.onClick && b.onClick(); });
+      el.addEventListener('click', () => { hide(); b.onClick && b.onClick(); });
       btnRow.appendChild(el);
     }
     host.classList.add('show');
